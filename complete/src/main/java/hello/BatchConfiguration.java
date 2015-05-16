@@ -35,6 +35,18 @@ public class BatchConfiguration {
         return new PersonItemProcessor(index);
     }
 
+    protected ItemWriter<Person> writer(final int index) {
+       return new ItemWriter<Person>(){
+          public void write(java.util.List<? extends Person> items){
+            System.out.println("Writer "+index+" is receiving "+items.size()+" items");
+            for (Person p: items) {
+                System.out.println("    Writer received " + p);
+            }
+          
+          }
+       };
+    }
+
     @Bean
     public ItemWriter<Person> writer(DataSource dataSource) {
         System.out.println ("Configuring writer with " + dataSource);
@@ -62,10 +74,10 @@ public class BatchConfiguration {
 
     @Bean
     public Job importUserJob2(
-      JobBuilderFactory jobs,
-      ItemWriter<Person> writer
+      JobBuilderFactory jobs
          ) {
         System.out.println("JOB 2");
+        ItemWriter<Person> writer = writer(2);
         Step s1 = step(2, writer);
         return jobs.get("importUserJob2")
                 .incrementer(new RunIdIncrementer())
