@@ -32,57 +32,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @EnableBatchProcessing
 public class BatchConfiguration {
 
-    protected ItemProcessor<Person, Person> processor(int index) {
-        return new PersonItemProcessor(index);
-    }
-
-    protected ItemWriter<Person> writer(final int index) {
-       return new ItemWriter<Person>(){
-          public void write(java.util.List<? extends Person> items){
-            System.out.println("Writer "+index+" is receiving "+items.size()+" items");
-            for (Person p: items) {
-                System.out.println("    Writer received " + p);
-            }
-          
-          }
-       };
-    }
-
-    @Bean
-    public ItemWriter<Person> writer(DataSource dataSource) {
-        System.out.println ("Configuring writer with " + dataSource);
-        JdbcBatchItemWriter<Person> writer = new JdbcBatchItemWriter<Person>();
-        writer.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<Person>());
-        writer.setSql("INSERT INTO people (first_name, last_name) VALUES (:firstName, :lastName)");
-        writer.setDataSource(dataSource);
-        return writer;
-    }
-
-    // tag::jobstep[]
-    @Bean
-    public Job importUserJob1(
-      JobBuilderFactory jobs,
-      ItemWriter<Person> writer
-         ) {
-        System.out.println("JOB 1");
-        Step s1 = step(1, writer);
-        return jobs.get("importUserJob1")
-                .incrementer(new RunIdIncrementer())
-                .flow(s1)
-                .end()
-                .build();
-    }
-
 /*
 * This List<Job> is not properly recognized as many @Beans.
 */
     @Bean
     public List<Job> importUserJobs(
-      JobBuilderFactory jobs
+      JobBuilderFactory jobs,
+       Scaffold scaffold
          ) {
          List<Job> list = new LinkedList<Job>();
          for (int index=2 ; index <= 3 ; index++ ) {
-           Job job =  importUserJob( jobs, index);
+           Job job =  scaffold.importUserJob( jobs, index);
             list.add(job);
          System.out.println("Nice list " + index);
          }
@@ -90,67 +50,23 @@ public class BatchConfiguration {
          }
 
     @Bean
-    public Job importUserJob2(JobBuilderFactory jobs) {
-      return importUserJob( jobs, 2);
+    public Job importUserJob2(JobBuilderFactory jobs, Scaffold scaffold) {
+      return scaffold.importUserJob( jobs, 2);
          }
 
     @Bean
-    public Job importUserJob3(JobBuilderFactory jobs) {
-      return importUserJob( jobs, 3);
+    public Job importUserJob3(JobBuilderFactory jobs, Scaffold scaffold) {
+      return scaffold.importUserJob( jobs, 3);
          }
-         
-protected Job importUserJob(
-      JobBuilderFactory jobs, int index
-         ) {
-        System.out.println("JOB "  + index);
-        ItemWriter<Person> writer = writer(index);
-        Step step = step(index, writer);
-        return jobs.get("importUserJob" + index)
-                .incrementer(new RunIdIncrementer())
-                .flow(step)
-                .end()
-                .build();
-    }
-    
-    protected ItemReader<Person> configuredReader(String fileName) {
-        FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
-        reader.setResource(new ClassPathResource(fileName));
-        reader.setLineMapper(new DefaultLineMapper<Person>() {{
-            setLineTokenizer(new DelimitedLineTokenizer() {{
-                setNames(new String[] { "firstName", "lastName" });
-            }});
-            setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
-                setTargetType(Person.class);
-            }});
-        }});
-        return reader;
-    }
 
-    @Autowired
-    DataSource dataSource;
-
-    @Autowired
-    StepBuilderFactory stepBuilderFactory;
-    
-    protected Step step(
-            int index,
-          ItemWriter<Person> writer
-            ) {
-        System.out.println("STEP-" +  index);
-        ItemReader<Person> reader = configuredReader("sample-data-"+index+".csv");
-        ItemProcessor<Person, Person> processor = processor(index); 
-//        ItemWriter<Person> writer = writer(dataSource) ;
-        return stepBuilderFactory.get("step" + index)
-                .<Person, Person> chunk(10)
-                .reader(reader)
-                .processor(processor)
-                .writer(writer)
-                .build();
-    }
-
+    /**
+     * Could probably be more elegant
+     */
     @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
-    }
+    public Scaffold getScaffold(){
+        return new Scaffold(); 
+      }
+
+        
 
 }
