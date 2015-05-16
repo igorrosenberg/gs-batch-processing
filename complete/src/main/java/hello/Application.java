@@ -24,6 +24,19 @@ public class Application implements CommandLineRunner {
     @Override
     public void run(String... strings) throws Exception {
 
+        (new Thread(new HelloRunnable())).start();
+
+    }
+
+public class HelloRunnable implements Runnable {
+
+    public void run() {
+        System.out.println("Hello from a thread!");
+        try {
+          Thread.sleep(2000);
+        } catch (Exception e) {}
+        System.out.println("Looking in the database.");
+
         List<Person> results = jdbcTemplate.query("SELECT first_name, last_name FROM people", new RowMapper<Person>() {
             @Override
             public Person mapRow(ResultSet rs, int row) throws SQLException {
@@ -34,6 +47,8 @@ public class Application implements CommandLineRunner {
         for (Person person : results) {
             System.out.println("Found <" + person + "> in the database.");
         }
-
     }
+
+  }
 }
+
