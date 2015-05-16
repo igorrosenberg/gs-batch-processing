@@ -1,6 +1,7 @@
 package hello;
 
 import javax.sql.DataSource;
+import java.util.*;;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -72,16 +73,41 @@ public class BatchConfiguration {
                 .build();
     }
 
+/*
+* This List<Job> is not properly recognized as many @Beans.
+*/
     @Bean
-    public Job importUserJob2(
+    public List<Job> importUserJobs(
       JobBuilderFactory jobs
          ) {
-        System.out.println("JOB 2");
-        ItemWriter<Person> writer = writer(2);
-        Step s1 = step(2, writer);
-        return jobs.get("importUserJob2")
+         List<Job> list = new LinkedList<Job>();
+         for (int index=2 ; index <= 3 ; index++ ) {
+           Job job =  importUserJob( jobs, index);
+            list.add(job);
+         System.out.println("Nice list " + index);
+         }
+         return list;
+         }
+
+    @Bean
+    public Job importUserJob2(JobBuilderFactory jobs) {
+      return importUserJob( jobs, 2);
+         }
+
+    @Bean
+    public Job importUserJob3(JobBuilderFactory jobs) {
+      return importUserJob( jobs, 3);
+         }
+         
+protected Job importUserJob(
+      JobBuilderFactory jobs, int index
+         ) {
+        System.out.println("JOB "  + index);
+        ItemWriter<Person> writer = writer(index);
+        Step step = step(index, writer);
+        return jobs.get("importUserJob" + index)
                 .incrementer(new RunIdIncrementer())
-                .flow(s1)
+                .flow(step)
                 .end()
                 .build();
     }
