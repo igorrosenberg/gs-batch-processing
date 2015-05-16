@@ -22,6 +22,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+
+
+import org.springframework.beans.factory.annotation.Qualifier;
+
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
@@ -59,18 +63,65 @@ public class BatchConfiguration {
 
     // tag::jobstep[]
     @Bean
-    public Job importUserJob(JobBuilderFactory jobs, Step s1) {
-        return jobs.get("importUserJob")
+    public Job importUserJob1(
+      JobBuilderFactory jobs, 
+      @Qualifier("step1")
+      Step s1) {
+        System.out.println("JOB 1");
+        return jobs.get("importUserJob1")
                 .incrementer(new RunIdIncrementer())
                 .flow(s1)
                 .end()
                 .build();
     }
+    
+/* DUPLICATE JOBS WORKS OK
+    @Bean
+    public Job importUserJob2(JobBuilderFactory jobs, Step s1) {
+        System.out.println("JOB 2");
+        return jobs.get("importUserJob2")
+                .incrementer(new RunIdIncrementer())
+                .flow(s1)
+                .end()
+                .build();
+    }*/
+
+    protected ItemReader<Person> configuredReader(String fileName) {
+        FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
+        reader.setResource(new ClassPathResource(fileName));
+        reader.setLineMapper(new DefaultLineMapper<Person>() {{
+            setLineTokenizer(new DelimitedLineTokenizer() {{
+                setNames(new String[] { "firstName", "lastName" });
+            }});
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
+                setTargetType(Person.class);
+            }});
+        }});
+        return reader;
+    }
 
     @Bean
-    public Step step1(StepBuilderFactory stepBuilderFactory, ItemReader<Person> reader,
-            ItemWriter<Person> writer, ItemProcessor<Person, Person> processor) {
+    @Qualifier("step1")    
+    public Step step1(
+            StepBuilderFactory stepBuilderFactory, 
+            ItemWriter<Person> writer, 
+            ItemProcessor<Person, Person> processor) {
+        System.out.println("STEP-1");
+        ItemReader<Person> reader = configuredReader("sample-data.csv");
         return stepBuilderFactory.get("step1")
+                .<Person, Person> chunk(10)
+                .reader(reader)
+                .processor(processor)
+                .writer(writer)
+                .build();
+    }
+
+    @Bean
+    @Qualifier("step2")    
+    public Step step2(StepBuilderFactory stepBuilderFactory, ItemReader<Person> reader,
+            ItemWriter<Person> writer, ItemProcessor<Person, Person> processor) {
+        System.out.println("STEP-2");
+        return stepBuilderFactory.get("step2")
                 .<Person, Person> chunk(10)
                 .reader(reader)
                 .processor(processor)
