@@ -1,7 +1,7 @@
 package hello;
 
 import javax.sql.DataSource;
-import java.util.*;;
+import java.util.*;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
