@@ -35,7 +35,7 @@ public class BatchConfiguration {
 /*
 * This List<Job> is not properly recognized as many @Beans.
 */
-    @Bean
+    //@Bean
     public List<Job> importUserJobs(
       JobBuilderFactory jobs,
        Scaffold scaffold
@@ -44,19 +44,24 @@ public class BatchConfiguration {
          for (int index=2 ; index <= 3 ; index++ ) {
            Job job =  scaffold.importUserJob( jobs, index);
             list.add(job);
-         System.out.println("Nice list " + index);
          }
          return list;
          }
 
-    @Bean
+   // @Bean
     public Job importUserJob2(JobBuilderFactory jobs, Scaffold scaffold) {
       return scaffold.importUserJob( jobs, 2);
          }
 
-    @Bean
+   // @Bean
     public Job importUserJob3(JobBuilderFactory jobs, Scaffold scaffold) {
       return scaffold.importUserJob( jobs, 3);
+         }
+
+
+    @Bean
+    public Job moveFilesinDirectory(JobBuilderFactory jobs, DirectoryScaffold scaffold) {
+      return scaffold.moveFilesinDirectoryJob(jobs, "/tmp/in", "/tmp/out");
          }
 
     /**
@@ -65,6 +70,14 @@ public class BatchConfiguration {
     @Bean
     public Scaffold getScaffold(){
         return new Scaffold(); 
+      }
+
+    /**
+     * Could probably be more elegant
+     */
+    @Bean
+    public DirectoryScaffold getDirectoryScaffold(){
+        return new DirectoryScaffold(); 
       }
 
         

@@ -2,6 +2,7 @@ package hello;
 
 import javax.sql.DataSource;
 import java.util.*;
+import java.io.*;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -23,68 +24,67 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 
-public class Scaffold {
+public class DirectoryScaffold {
 
-    public Job importUserJob(
+    private static Log logger = LogFactory.getLog("DirectoryScaffold");
+     
+    public Job moveFilesinDirectoryJob(
       JobBuilderFactory jobs, 
-      int configurationData
+//      File dirIn, File dirOut
+        String dirInPath, String dirOutPath
          ) {
-        System.out.println("JOB "  + configurationData);
-        Step step = step(configurationData);
+       int configurationData = 1 ; 
+       logger.info("preparing Job to move from "+ dirInPath + " to " + dirOutPath);
+       File dirIn = new File(dirInPath); 
+       File dirOut = new File(dirOutPath); 
+       Step step1 = step1(dirIn);
+//       Step step2 = step2(dirIn,dirOut);
         return jobs.get("importUserJob" + configurationData)
                 .incrementer(new RunIdIncrementer())
-                .flow(step)
+                .flow(step1)
+                //.flow(step2)
                 .end()
                 .build();
     }    
 
     @Autowired
     StepBuilderFactory stepBuilderFactory;
-    
-    protected Step step(
-            int configurationData
+    /*
+    protected Step step2(
+            File dirIn, File dirOut
             ) {
-        System.out.println("STEP-" +  configurationData);
-        ItemReader<Person> reader = configuredReader("sample-data-"+configurationData+".csv");
-        ItemProcessor<Person, Person> processor = processor(configurationData); 
-        ItemWriter<Person> writer = writer(configurationData);
-        return stepBuilderFactory.get("step" + configurationData)
-                .<Person, Person> chunk(10)
+            }
+*/
+    protected Step step1(
+            File dirIn
+            ) {
+        System.out.println("step1 - read files from " +  dirIn);
+        ItemReader<File> reader = new FilesInDirectoryItemReader(dirIn);
+        ItemProcessor<File, List<String>> processor = new FileItemProcessor(); 
+        ItemWriter<List<String>> writer = writer();
+        return stepBuilderFactory.get("step1")
+                .<File, List<String>> chunk(10)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)
                 .build();
     }
 
-    protected ItemReader<Person> configuredReader(String fileName) {
-        FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
-        reader.setResource(new ClassPathResource(fileName));
-        reader.setLineMapper(new DefaultLineMapper<Person>() {{
-            setLineTokenizer(new DelimitedLineTokenizer() {{
-                setNames(new String[] { "firstName", "lastName" });
-            }});
-            setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
-                setTargetType(Person.class);
-            }});
-        }});
-        return reader;
-    }
-
-    protected ItemProcessor<Person, Person> processor(int configurationData) {
-        return new PersonItemProcessor(configurationData);
-    }
-
-    protected ItemWriter<Person> writer(final int configurationData) {
-       return new ItemWriter<Person>(){
-          public void write(java.util.List<? extends Person> items){
-            System.out.println("Writer "+configurationData+" is receiving "+items.size()+" items");
-            for (Person p: items) {
-                System.out.println("    Writer received " + p);
+    protected ItemWriter<List<String>> writer() {
+       return new ItemWriter<List<String>>(){
+          public void write(java.util.List<? extends List<String>> items){
+            System.out.println("Writer is receiving "+items.size()+" items");
+            for (List<String> ls: items) {
+              for (String s: ls) {
+                  System.out.println("    Writer received " + s);
+              }
             }
           
           }
