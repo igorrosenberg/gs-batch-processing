@@ -31,33 +31,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public class Scaffold {
 
     public Job importUserJob(
-      JobBuilderFactory jobs, int index
+      JobBuilderFactory jobs, int configurationData
          ) {
-        System.out.println("JOB "  + index);
-        ItemWriter<Person> writer = writer(index);
-        Step step = step(index, writer);
-        return jobs.get("importUserJob" + index)
+        System.out.println("JOB "  + configurationData);
+        Step step = step(configurationData);
+        return jobs.get("importUserJob" + configurationData)
                 .incrementer(new RunIdIncrementer())
                 .flow(step)
                 .end()
                 .build();
     }    
-
-    protected ItemProcessor<Person, Person> processor(int index) {
-        return new PersonItemProcessor(index);
-    }
-
-    protected ItemWriter<Person> writer(final int index) {
-       return new ItemWriter<Person>(){
-          public void write(java.util.List<? extends Person> items){
-            System.out.println("Writer "+index+" is receiving "+items.size()+" items");
-            for (Person p: items) {
-                System.out.println("    Writer received " + p);
-            }
-          
-          }
-       };
-    }
 
     protected ItemReader<Person> configuredReader(String fileName) {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
@@ -73,41 +56,38 @@ public class Scaffold {
         return reader;
     }
 
-    @Autowired
-    DataSource dataSource;
+    protected ItemProcessor<Person, Person> processor(int configurationData) {
+        return new PersonItemProcessor(configurationData);
+    }
+
+    protected ItemWriter<Person> writer(final int configurationData) {
+       return new ItemWriter<Person>(){
+          public void write(java.util.List<? extends Person> items){
+            System.out.println("Writer "+configurationData+" is receiving "+items.size()+" items");
+            for (Person p: items) {
+                System.out.println("    Writer received " + p);
+            }
+          
+          }
+       };
+    }
 
     @Autowired
     StepBuilderFactory stepBuilderFactory;
     
     protected Step step(
-            int index,
-          ItemWriter<Person> writer
+            int configurationData
             ) {
-        System.out.println("STEP-" +  index);
-        ItemReader<Person> reader = configuredReader("sample-data-"+index+".csv");
-        ItemProcessor<Person, Person> processor = processor(index); 
-//        ItemWriter<Person> writer = writer(dataSource) ;
-        return stepBuilderFactory.get("step" + index)
+        System.out.println("STEP-" +  configurationData);
+        ItemReader<Person> reader = configuredReader("sample-data-"+configurationData+".csv");
+        ItemProcessor<Person, Person> processor = processor(configurationData); 
+        ItemWriter<Person> writer = writer(configurationData);
+        return stepBuilderFactory.get("step" + configurationData)
                 .<Person, Person> chunk(10)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)
                 .build();
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
-    }
-
-    @Bean
-    public ItemWriter<Person> writer(DataSource dataSource) {
-        System.out.println ("Configuring writer with " + dataSource);
-        JdbcBatchItemWriter<Person> writer = new JdbcBatchItemWriter<Person>();
-        writer.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<Person>());
-        writer.setSql("INSERT INTO people (first_name, last_name) VALUES (:firstName, :lastName)");
-        writer.setDataSource(dataSource);
-        return writer;
     }
 
 }
