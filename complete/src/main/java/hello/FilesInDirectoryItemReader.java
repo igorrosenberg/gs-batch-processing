@@ -12,8 +12,13 @@ import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class FilesInDirectoryItemReader implements ItemReader<File>, ItemStream {
         
+        private static Log logger = LogFactory.getLog("FilesInDirectoryItemReader");
+         
         private File [] files;
         
         private int currentCount;
@@ -33,7 +38,9 @@ public class FilesInDirectoryItemReader implements ItemReader<File>, ItemStream 
                    	}
                  	};
                 this.files = directory.listFiles( fileFilter );
-                Arrays.sort(files, nameFileNameComparator);
+                Arrays.sort(this.files, nameFileNameComparator);
+                
+                logger.info("Files in directory to be treated: " + this.files.length );
         }
 
         @Override
@@ -52,8 +59,7 @@ public class FilesInDirectoryItemReader implements ItemReader<File>, ItemStream 
         public void close() throws ItemStreamException { }
 
         @Override
-        public File read() throws Exception, UnexpectedInputException,
-                        ParseException, NonTransientResourceException {
+        public File read() {
                 int index = currentCount++;
                 if (index == files.length) {
                         return null;

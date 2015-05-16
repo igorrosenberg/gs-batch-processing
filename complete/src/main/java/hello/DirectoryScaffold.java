@@ -3,6 +3,7 @@ package hello;
 import javax.sql.DataSource;
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -37,56 +38,46 @@ public class DirectoryScaffold {
      
     public Job moveFilesinDirectoryJob(
       JobBuilderFactory jobs, 
-//      File dirIn, File dirOut
         String dirInPath, String dirOutPath
          ) {
-       int configurationData = 1 ; 
        logger.info("preparing Job to move from "+ dirInPath + " to " + dirOutPath);
        File dirIn = new File(dirInPath); 
        File dirOut = new File(dirOutPath); 
-       Step step1 = step1(dirIn);
-//       Step step2 = step2(dirIn,dirOut);
-        return jobs.get("importUserJob" + configurationData)
+       Step step1 = step1(dirIn,dirOut);
+        return jobs.get("moveFilesinDirectoryJob")
                 .incrementer(new RunIdIncrementer())
                 .flow(step1)
-                //.flow(step2)
                 .end()
                 .build();
     }    
 
     @Autowired
     StepBuilderFactory stepBuilderFactory;
-    /*
-    protected Step step2(
-            File dirIn, File dirOut
-            ) {
-            }
-*/
+    
     protected Step step1(
-            File dirIn
+            File dirIn, File dirOut
             ) {
         System.out.println("step1 - read files from " +  dirIn);
         ItemReader<File> reader = new FilesInDirectoryItemReader(dirIn);
-        ItemProcessor<File, List<String>> processor = new FileItemProcessor(); 
-        ItemWriter<List<String>> writer = writer();
+        ItemProcessor<File, File> processor = new FileItemProcessor(); 
+        ItemWriter<File> writer = writer(dirOut);
         return stepBuilderFactory.get("step1")
-                .<File, List<String>> chunk(10)
+                .<File, File> chunk(10)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)
                 .build();
     }
 
-    protected ItemWriter<List<String>> writer() {
-       return new ItemWriter<List<String>>(){
-          public void write(java.util.List<? extends List<String>> items){
-            System.out.println("Writer is receiving "+items.size()+" items");
-            for (List<String> ls: items) {
-              for (String s: ls) {
-                  System.out.println("    Writer received " + s);
-              }
+    protected ItemWriter<File> writer(final File dirOut) {
+       return new ItemWriter<File>() {
+          public void write(List<? extends File> files) throws IOException {
+            System.out.println("Writer is receiving " + files.size());
+            for (File file : files) {
+              Path dest = new File (dirOut, file.getName()).toPath();
+              Path destinationPath = Files.move(file.toPath(), dest);
+              System.out.println("    Moved file to " + destinationPath);
             }
-          
           }
        };
     }

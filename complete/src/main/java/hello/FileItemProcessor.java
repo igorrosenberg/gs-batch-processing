@@ -9,14 +9,13 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.batch.item.*;
 
-public class FileItemProcessor implements ItemProcessor<File, List<String>> {
+public class FileItemProcessor implements ItemProcessor<File, File> {
 
     private static Log logger = LogFactory.getLog("FileItemProcessor");
      
-    public List<String> process(File file){
+    public File process(File file) {
 
 		  BufferedReader br = null;
-			List<String> lines = new ArrayList<String>();
 		  try {
    
 			  String line;
@@ -24,18 +23,23 @@ public class FileItemProcessor implements ItemProcessor<File, List<String>> {
 			  br = new BufferedReader(new FileReader(file));
    
 			  while ((line = br.readLine()) != null) {
-				  lines.add(line);
+            treat(line);
 			  }
    
 		  } catch (IOException e) {
 			  logger.error(e);
-        lines = null; 
+			  file = null ; // tell Spring Batch a problem occurred
 		  } finally {
 			  try {
 				  if (br != null)br.close();
 			  } catch (IOException ex) {
 			  }
 		  }
-      return lines;       
+      return file;
     }
+
+  protected void treat(String line){
+    System.out.println ("HEY, line is journalized!  " + line);
+  }
+
 }
