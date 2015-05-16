@@ -18,37 +18,8 @@ public class Application implements CommandLineRunner {
         SpringApplication.run(Application.class, args);
     }
 
-    @Autowired
-    JdbcTemplate jdbcTemplate;
-
     @Override
-    public void run(String... strings) throws Exception {
-
-        (new Thread(new HelloRunnable())).start();
-
-    }
-
-public class HelloRunnable implements Runnable {
-
-    public void run() {
-        System.out.println("Hello from a thread!");
-        try {
-          Thread.sleep(2000);
-        } catch (Exception e) {}
-        System.out.println("Looking in the database.");
-
-        List<Person> results = jdbcTemplate.query("SELECT first_name, last_name FROM people", new RowMapper<Person>() {
-            @Override
-            public Person mapRow(ResultSet rs, int row) throws SQLException {
-                return new Person(rs.getString(1), rs.getString(2));
-            }
-        });
-
-        for (Person person : results) {
-            System.out.println("Found <" + person + "> in the database.");
-        }
-    }
-
-  }
+    public void run(String... strings) {
+ }
 }
 
