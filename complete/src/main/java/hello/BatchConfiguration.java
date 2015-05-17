@@ -34,33 +34,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @EnableBatchProcessing
 public class BatchConfiguration {
 
-/*
-* This List<Job> is not properly recognized as many @Beans.
-*/
-    //@Bean
-    public List<Job> importUserJobs(
-      JobBuilderFactory jobs,
-       Scaffold scaffold
-         ) {
-         List<Job> list = new LinkedList<Job>();
-         for (int index=2 ; index <= 3 ; index++ ) {
-           Job job =  scaffold.importUserJob( jobs, index);
-            list.add(job);
-         }
-         return list;
-         }
-
-   // @Bean
-    public Job importUserJob2(JobBuilderFactory jobs, Scaffold scaffold) {
-      return scaffold.importUserJob( jobs, 2);
-         }
-
-   // @Bean
-    public Job importUserJob3(JobBuilderFactory jobs, Scaffold scaffold) {
-      return scaffold.importUserJob( jobs, 3);
-         }
-
-
     @Bean
     public Job moveFilesinDirectory(JobBuilderFactory jobs, DirectoryScaffold directoryScaffold) {
       return directoryScaffold.moveFilesinDirectoryJob(jobs, "/tmp/in", "/tmp/out");
@@ -75,18 +48,8 @@ public class BatchConfiguration {
      * Could probably be more elegant
      */
     @Bean
-    public Scaffold getScaffold(){
-        return new Scaffold(); 
-      }
-
-    /**
-     * Could probably be more elegant
-     */
-    @Bean
     public DirectoryScaffold getDirectoryScaffold(){
         return new DirectoryScaffold(); 
-      }
-
-        
+      }       
 
 }
