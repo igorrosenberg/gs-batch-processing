@@ -1,12 +1,13 @@
-package hello;
+package hello.files;
+
+import hello.files.tasks.*;
 
 import javax.sql.DataSource;
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
@@ -36,6 +37,8 @@ public class DirectoryScaffold {
 
     private static Log logger = LogFactory.getLog("DirectoryScaffold");
      
+    static int counter = 0; 
+    
     public Job moveFilesinDirectoryJob(
       JobBuilderFactory jobs, 
         String dirInPath, String dirOutPath
@@ -43,43 +46,57 @@ public class DirectoryScaffold {
        logger.info("preparing Job to move from "+ dirInPath + " to " + dirOutPath);
        File dirIn = new File(dirInPath); 
        File dirOut = new File(dirOutPath); 
-       Step step1 = step1(dirIn,dirOut);
-        return jobs.get("moveFilesinDirectoryJob")
+       Step step = step(dirIn,dirOut);
+       JobParametersValidator jobParametersValidator = validator(dirIn, dirOut);
+        return jobs.get("moveFilesinDirectoryJob-" + (counter++))
                 .incrementer(new RunIdIncrementer())
-                .flow(step1)
+                .validator(jobParametersValidator)
+                .flow(step)
                 .end()
                 .build();
     }    
+    
+    protected JobParametersValidator validator(final File dirIn, final File dirOut) {
+        return new JobParametersValidator() {
+          public void validate(JobParameters parameters) throws JobParametersInvalidException {
+            Map<String, JobParameter> params = parameters.getParameters();
+            for (Map.Entry<String, JobParameter> entry : params.entrySet()) {
+                System.out.println("  Job param: " + entry.getKey() + " >> " + entry.getValue());
+            }
+            System.out.println("  Job param dirIn: "  + dirIn);
+            System.out.println("  Job param dirOut: " + dirOut);
+            if (!dirIn.exists())
+              throw new JobParametersInvalidException("In directory "+dirIn+" not found");
+            if (!dirIn.isDirectory())
+              throw new JobParametersInvalidException("In directory "+dirIn+" is not a directory");
+            if (!dirOut.exists())
+              throw new JobParametersInvalidException("Out directory "+dirOut+" not found");
+            if (!dirOut.isDirectory())
+              throw new JobParametersInvalidException("Out directory "+dirOut+" is not a directory");
+
+          }
+        };
+    }
+    
 
     @Autowired
     StepBuilderFactory stepBuilderFactory;
     
-    protected Step step1(
+    protected Step step(
             File dirIn, File dirOut
             ) {
-        System.out.println("step1 - read files from " +  dirIn);
+        System.out.println("step - read files from " +  dirIn + ", process, then move to " + dirOut);
         ItemReader<File> reader = new FilesInDirectoryItemReader(dirIn);
         ItemProcessor<File, File> processor = new FileItemProcessor(); 
-        ItemWriter<File> writer = writer(dirOut);
-        return stepBuilderFactory.get("step1")
+        ItemProcessor<File, File> processor2 = new FileItemProcessor(); 
+        ItemWriter<File> writer = new FileItemWriter(dirOut); 
+        return stepBuilderFactory.get("directoryScaffoldStep-" + counter)
                 .<File, File> chunk(10)
                 .reader(reader)
                 .processor(processor)
+                .processor(processor2)
                 .writer(writer)
                 .build();
-    }
-
-    protected ItemWriter<File> writer(final File dirOut) {
-       return new ItemWriter<File>() {
-          public void write(List<? extends File> files) throws IOException {
-            System.out.println("Writer is receiving " + files.size());
-            for (File file : files) {
-              Path dest = new File (dirOut, file.getName()).toPath();
-              Path destinationPath = Files.move(file.toPath(), dest);
-              System.out.println("    Moved file to " + destinationPath);
-            }
-          }
-       };
     }
 
 
