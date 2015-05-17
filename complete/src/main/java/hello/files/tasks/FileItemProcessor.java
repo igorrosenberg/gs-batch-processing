@@ -1,13 +1,13 @@
 package hello.files.tasks;
 
-import java.io.*;
-import java.util.*;
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.FileReader;
+import org.springframework.batch.item.ItemProcessor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.springframework.batch.item.*;
 
 public class FileItemProcessor implements ItemProcessor<File, File> {
 
