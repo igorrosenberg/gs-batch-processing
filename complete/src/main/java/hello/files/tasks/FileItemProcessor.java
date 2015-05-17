@@ -31,7 +31,8 @@ public class FileItemProcessor implements ItemProcessor<File, File> {
 			  file = null ; // tell Spring Batch a problem occurred
 		  } finally {
 			  try {
-				  if (br != null)br.close();
+				  if (br != null)
+				    br.close();
 			  } catch (IOException ex) {
 			  }
 		  }

@@ -88,13 +88,11 @@ public class DirectoryScaffold {
         System.out.println("step - read files from " +  dirIn + ", process, then move to " + dirOut);
         ItemReader<File> reader = new FilesInDirectoryItemReader(dirIn);
         ItemProcessor<File, File> processor = new FileItemProcessor(); 
-        ItemProcessor<File, File> processor2 = new FileItemProcessor(); 
         ItemWriter<File> writer = new FileItemWriter(dirOut); 
         return stepBuilderFactory.get("directoryScaffoldStep-" + counter)
                 .<File, File> chunk(10)
                 .reader(reader)
                 .processor(processor)
-                .processor(processor2)
                 .writer(writer)
                 .build();
     }

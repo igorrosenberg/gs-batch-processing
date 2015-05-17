@@ -1,7 +1,9 @@
 package hello;
 
+import hello.files.DirectoryScaffold;
+
 import javax.sql.DataSource;
-import java.util.*;;
+import java.util.*;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -60,8 +62,13 @@ public class BatchConfiguration {
 
 
     @Bean
-    public Job moveFilesinDirectory(JobBuilderFactory jobs, DirectoryScaffold scaffold) {
-      return scaffold.moveFilesinDirectoryJob(jobs, "/tmp/in", "/tmp/out");
+    public Job moveFilesinDirectory(JobBuilderFactory jobs, DirectoryScaffold directoryScaffold) {
+      return directoryScaffold.moveFilesinDirectoryJob(jobs, "/tmp/in", "/tmp/out");
+         }
+
+    // @Bean
+    public Job moveFilesinDirectory2(JobBuilderFactory jobs, DirectoryScaffold directoryScaffold) {
+      return directoryScaffold.moveFilesinDirectoryJob(jobs, "/tmp/out", "/tmp/in");
          }
 
     /**
